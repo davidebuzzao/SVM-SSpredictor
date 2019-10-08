@@ -22,8 +22,9 @@ if __name__ == '__main__':
             block = int(len(name)/folds)
             output_id = [directory + 'cv' + str(i) + '.id' for i in range(1,folds+1)]
 
-            i = 0
+            k = 0
             for j in range(folds):
                 with open(output_id[j], 'w') as fileout:
-                    for i in range(i,i+block):
+                    for i in range(k,k+block):
                         fileout.write(name[i])
+                    k = i + 1

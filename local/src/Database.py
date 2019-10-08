@@ -14,19 +14,22 @@ class Database:
     datatype: str
     raw_file: bool
     window: int
+    one_hot: bool
 
-    def __init__(self, datatype=str, raw_file=False, window=17):
+    def __init__(self, datatype, raw_file=False, window=17, one_hot=False):
         try:
             datatype != False
         except:
             print('Method Usage: obj.build_dataset(id_list, datatype = (psiblast, dssp, svm)')
             raise SystemExit
         else:
+            self.residues = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
             self.dataset = []
             self.datatype = datatype
             self.raw_file = raw_file
             self.window = window
-        
+            self.one_hot = one_hot
+
     def __len__(self):
         return len(self.dataset) 
     
@@ -39,8 +42,11 @@ class Database:
             if self.datatype == 'psiblast':
                 for id in filein:
                     id = id.rstrip()
-                    if self.raw_file != False:
-                        id = Pssm('./psiblast/pssm/' + id + '.pssm')
+                    if self.raw_file:
+                        if self.one_hot:
+                            id = Pssm('./psiblast/pssm/' + id + '.pssm', './fasta/' + id + '.fasta', id, self.raw_file)
+                        else:
+                            id = Pssm('./psiblast/pssm/' + id + '.pssm', id)
                     else:
                         id = Pssm('./psiblast/bin/' + id + '.npy')
                     self.__append__(id.parser())
@@ -73,18 +79,31 @@ class Pssm(Database):
 
     path_profile: str
 
-    def __init__(self, path_profile):
-        super().__init__()
+    def __init__(self, path_profile, path_fasta=False, id=False, raw_file=False):
+        super().__init__(self)
         
+        self.id = id
         self.path_profile = path_profile
+        self.path_fasta = path_fasta
         self.profile = np.empty(0)
+        self.raw_file = raw_file
 
     def parser(self):
         init_profile = []
-
-        if self.raw_file != False:
-            path_profile = self.path_profile
-            with open(path_profile) as pssm_file:
+        if self.raw_file:
+            try: 
+                pssm_file = open(self.path_profile)
+            except:
+                print('The %s profile will be created as one-hot profile' %self.id)
+                with open(self.path_fasta) as fasta_file:
+                    sequence = fasta_file.read().splitlines()[1]
+                    for res in sequence:
+                        prof1 = np.zeros(20)
+                        prof1[self.residues.index(res)] = 1.0
+                        init_profile.append(prof1)
+                self.profile = np.array(init_profile, dtype=np.float64)
+                np.save('./psiblast/bin/' + self.id + '.npy', self.profile)
+            else:
                 for row in pssm_file:
                     row = row.rstrip().split()
                     try: row[0]
@@ -92,12 +111,11 @@ class Pssm(Database):
                     else:
                         if row[0].isdigit():
                             init_profile.append(row[22:-2])
-
-            self.profile = np.array(init_profile, dtype=np.float64)
-            self.profile/100
+                self.profile = np.array(init_profile, dtype=np.float64)
+                self.profile/100
+                np.save('./psiblast/bin/' + self.id + '.npy', self.profile)
         else:
-            path_profile = self.path_profile
-            self.profile = np.load(path_profile)
+            self.profile = np.load(self.path_profile, allow_pickle=True)
         
         return(self.profile)
     
@@ -224,7 +242,15 @@ class Svm(Database):
 if __name__ == '__main__':
     id_input = argv[1]
 
-    svm = Database(datatype='svm', raw_file=False, window=17)
-    svm_dataset = svm.build_dataset(id_input)
-    for i in svm_dataset:
+    prof = Database(datatype='psiblast', raw_file=True, window=17, one_hot=True)
+
+    prof_dataset = prof.build_dataset(id_input)
+
+    for i in prof_dataset:
         print(i)
+
+    # svm = Database(datatype='svm', raw_file=False, window=17, one_hot=True)
+    # svm_dataset = svm.build_dataset(id_input)
+    # for i in svm_dataset:
+    #     print(i)
+
