@@ -16,7 +16,7 @@ class Database:
     window: int
     one_hot: bool
 
-    def __init__(self, datatype, raw_file=False, window=17, one_hot=False):
+    def __init__(self, datatype, setype=False, raw_file=False, window=17, one_hot=False):
         try:
             datatype != False
         except:
@@ -29,6 +29,7 @@ class Database:
             self.raw_file = raw_file
             self.window = window
             self.one_hot = one_hot
+            self.setype = setype
 
     def __len__(self):
         return len(self.dataset) 
@@ -44,9 +45,9 @@ class Database:
                     id = id.rstrip()
                     if self.raw_file:
                         if self.one_hot:
-                            id = Pssm('./psiblast/pssm/' + id + '.pssm', './fasta/' + id + '.fasta', id, self.raw_file)
+                            id = Pssm('./psiblast/pssm/' + id + '.pssm', './fasta/' + id + '.fasta', id=id, raw_file=self.raw_file, setype=self.setype)
                         else:
-                            id = Pssm('./psiblast/pssm/' + id + '.pssm', id)
+                            id = Pssm('./psiblast/pssm/' + id + '.pssm', id=id, raw_file=self.raw_file)
                     else:
                         id = Pssm('./psiblast/bin/' + id + '.npy')
                     self.__append__(id.parser())
@@ -79,7 +80,7 @@ class Pssm(Database):
 
     path_profile: str
 
-    def __init__(self, path_profile, path_fasta=False, id=False, raw_file=False):
+    def __init__(self, path_profile, path_fasta=False, id=False, raw_file=False, setype=False):
         super().__init__(self)
         
         self.id = id
@@ -87,6 +88,7 @@ class Pssm(Database):
         self.path_fasta = path_fasta
         self.profile = np.empty(0)
         self.raw_file = raw_file
+        self.setype = setype
 
     def parser(self):
         init_profile = []
@@ -114,7 +116,17 @@ class Pssm(Database):
                 self.profile = np.array(init_profile, dtype=np.float64)
                 self.profile/100
                 np.save('./psiblast/bin/' + self.id + '.npy', self.profile)
-        else:
+                
+                if self.setype == 'test':
+                    print('The %s profile for the test-set will be modified with one-hot windows' %self.id)
+                    with open(self.path_fasta) as fasta_file:
+                        sequence = fasta_file.read().splitlines()[1]
+
+                        for res in range(len(sequence)):
+                            if np.sum(self.profile[res]) == 0:
+                                print(self.id)
+                                self.profile[res][self.residues.index(sequence[res])] = 1.0
+        else:   
             self.profile = np.load(self.path_profile, allow_pickle=True)
         
         return(self.profile)
@@ -242,15 +254,15 @@ class Svm(Database):
 if __name__ == '__main__':
     id_input = argv[1]
 
-    prof = Database(datatype='psiblast', raw_file=True, window=17, one_hot=True)
+    prof = Database(datatype='psiblast', setype='test', raw_file=True, window=17, one_hot=True)
 
     prof_dataset = prof.build_dataset(id_input)
 
-    for i in prof_dataset:
-        print(i)
+    # for i in prof_dataset:
+    #     for j in i:
+    #         print(j)
 
     # svm = Database(datatype='svm', raw_file=False, window=17, one_hot=True)
     # svm_dataset = svm.build_dataset(id_input)
     # for i in svm_dataset:
     #     print(i)
-
