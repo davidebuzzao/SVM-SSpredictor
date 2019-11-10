@@ -12,25 +12,43 @@ import pandas as pd
 import numpy as np
 import argparse
 
-def sov(expected_file, predicted_file):
+def sov(expected, predicted, file=False):
     secondary_structure = ['H', 'E', '-']
-    ss_dictionary = {'H':[0,0,0], 'E':[0,0,0], '-':[0,0,0]}
-    with open(expected_file) as filein1, open(predicted_file) as filein2:
-        for dssp,pred in zip(filein1, filein2):
-            dssp = dssp.rstrip()
-            pred = pred.rstrip()
-            try: (len(dssp) + len(pred)) % 2 == 0
-            except:
-                print("Different lenght between expected and predicted sequence: \n%s\n%s" %(dssp,pred))
-                raise SystemExit
-            else:
-                for ss in secondary_structure:
-                    num_of_ss = int(dssp.count(ss))
-                    dssp_fragments = sov_parser(dssp, ss)
-                    pred_fragments = sov_parser(pred, ss)
-                    if num_of_ss != 0: 
-                        ss_dictionary[ss][0] += sov_scorer(dssp_fragments, pred_fragments, num_of_ss)
-                        ss_dictionary[ss][1] += 1
+    ss_dictionary = dict([key, np.zeros(3)] for key in secondary_structure)
+    if file == True:
+        with open(expected) as filein1, open(predicted) as filein2:
+            for dssp,pred in zip(filein1, filein2):
+                dssp = dssp.rstrip()
+                pred = pred.rstrip()
+                try: (len(dssp) + len(pred)) % 2 == 0
+                except:
+                    print("Different lenght between expected and predicted sequence: \n%s\n%s" %(dssp,pred))
+                    raise SystemExit
+                else:
+                    for ss in secondary_structure:
+                        num_of_ss = int(dssp.count(ss))
+                        dssp_fragments = sov_parser(dssp, ss)
+                        pred_fragments = sov_parser(pred, ss)
+                        if num_of_ss != 0: 
+                            ss_dictionary[ss][0] += sov_scorer(dssp_fragments, pred_fragments, num_of_ss)
+                            ss_dictionary[ss][1] += 1
+    else:
+        for dssp,pred in zip(expected, predicted):
+                dssp = dssp.rstrip()
+                pred = pred.rstrip()
+                try: (len(dssp) + len(pred)) % 2 == 0
+                except:
+                    print("Different lenght between expected and predicted sequence: \n%s\n%s" %(dssp,pred))
+                    raise SystemExit
+                else:
+                    for ss in secondary_structure:
+                        num_of_ss = int(dssp.count(ss))
+                        dssp_fragments = sov_parser(dssp, ss)
+                        pred_fragments = sov_parser(pred, ss)
+                        if num_of_ss != 0: 
+                            ss_dictionary[ss][0] += sov_scorer(dssp_fragments, pred_fragments, num_of_ss)
+                            ss_dictionary[ss][1] += 1
+    
     for val in ss_dictionary.values():
         val[2] = val[0] / val[1]
 

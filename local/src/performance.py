@@ -11,15 +11,15 @@ def pretty_dictionary(D):
     print()
 
 def compute_similarity(expected, predicted):
-    with open(expected) as dssp, open(predicted) as predic:
-        true = []
-        pred = []
-        for i,j in zip(dssp, predic):
-            i = i.rstrip()
-            j = j.rstrip()
-            for k in range(len(i)):
-                true.append(i[k])
-                pred.append(j[k])
+    # with open(expected) as dssp, open(predicted) as predic:
+    true = []
+    pred = []
+    for i,j in zip(expected, predicted):
+        i = i.rstrip()
+        j = j.rstrip()
+        for k in range(len(i)):
+            true.append(i[k])
+            pred.append(j[k])
     return(true, pred)
 
 #####################################
@@ -43,6 +43,7 @@ def print_performance(confusion_matrix):
     MCC = ((TP * TN) - (FN * FP)) / (np.sqrt((TP + FN) * (TP + FP) * (TN + FN) * (TN + FP)))
    
     return(MCC, ACC, TPR, PPV, FPR, NPV)
+
 
 def ss_compo(dssp_file):
     ss = ['H', 'E', '-']

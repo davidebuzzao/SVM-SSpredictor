@@ -5,7 +5,7 @@ import numpy as np
 class Database:
     '''
     The class Database is intended to be updated as soon as some new formatted files 
-    will be introduced in my sbioinformatics pipelines. For the time being, sequence profiles
+    will be introduced in my bioinformatics pipelines. For the time being, sequence profiles
     coming from psiblast runs and dssp outputs are parsed both starting from raw and pre-pruned 
     files, then datasets are built by stacking information of single objects (by the use of other classes)
     in order to deal with the whole DATABASE when training models in a Machine Learning framemwork.
@@ -15,8 +15,8 @@ class Database:
     raw_file: bool
     window: int
     one_hot: bool
-
-    def __init__(self, datatype, setype=False, raw_file=False, window=17, one_hot=False):
+    
+    def __init__(self, datatype, setype=False, psiblast_raw_file=False, dssp_raw_file=False, window=17, one_hot=False):
         try:
             datatype != False
         except:
@@ -26,7 +26,8 @@ class Database:
             self.residues = ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V']
             self.dataset = []
             self.datatype = datatype
-            self.raw_file = raw_file
+            self.psiblast_raw_file = psiblast_raw_file
+            self.dssp_raw_file = dssp_raw_file
             self.window = window
             self.one_hot = one_hot
             self.setype = setype
@@ -38,37 +39,36 @@ class Database:
         return self.dataset.append(item)
 
     def build_dataset(self, id_list):
-        with open(id_list) as filein:
-            
-            if self.datatype == 'psiblast':
-                for id in filein:
-                    id = id.rstrip()
-                    if self.raw_file:
-                        if self.one_hot:
-                            id = Pssm('./psiblast/pssm/' + id + '.pssm', './fasta/' + id + '.fasta', id=id, raw_file=self.raw_file, setype=self.setype)
-                        else:
-                            id = Pssm('./psiblast/pssm/' + id + '.pssm', id=id, raw_file=self.raw_file)
-                    else:
-                        id = Pssm('./psiblast/bin/' + id + '.npy')
-                    self.__append__(id.parser())
-                return self.dataset
 
-            elif self.datatype == 'dssp':
-                for id in filein:
-                    if self.raw_file != False:
-                        chain = id.rstrip().split('_')[1]
-                        id = id.rstrip().split('_')[0]
-                        id = Dssp('./dssp/raw/' + id + '.dssp', chain)
+        if self.datatype == 'psiblast':
+            for id in id_list:
+                if self.psiblast_raw_file:
+                    if self.one_hot:
+                        id = Pssm('./psiblast/pssm/' + id + '.pssm', './fasta/' + id + '.fasta', id=id, raw_file=self.psiblast_raw_file, setype=self.setype)
                     else:
-                        id = id.rstrip()
-                        id = Dssp('./dssp/ss/' + id + '.dssp')
-                    self.__append__(id.parser())
-                return self.dataset
+                        id = Pssm('./psiblast/pssm/' + id + '.pssm', id=id, raw_file=self.psiblast_raw_file)
+                else:
+                    id = Pssm('./psiblast/bin/' + id + '.npy')
 
-            elif self.datatype == 'svm':
-                svm = Svm(id_list, raw_file=self.raw_file, window=self.window)
-                svm_dataset = svm.encode()  
-                return(svm_dataset)
+                self.__append__(id.parser())
+            return self.dataset
+
+        elif self.datatype == 'dssp':
+            for id in id_list:
+
+                if self.dssp_raw_file:
+                    ch = id.rstrip().split('_')[1]
+                    id = id.rstrip().split('_')[0]
+                    id = Dssp(path_dssp='./dssp/raw/' + id + '.dssp', chain=ch, dssp_raw_file=True)
+                else:
+                    id = Dssp(path_dssp='./dssp/ss/' + id + '.dssp', dssp_raw_file=False)
+                self.__append__(id.parser())
+            return self.dataset
+
+        elif self.datatype == 'svm':
+            svm = Svm(id_list, psiblast_raw_file=self.psiblast_raw_file, dssp_raw_file=self.dssp_raw_file, window=self.window, setype=self.setype)
+            svm_dataset = svm.encode()  
+            return(svm_dataset)
 
     def __iter__(self):
         return(self)
@@ -96,7 +96,7 @@ class Pssm(Database):
             try: 
                 pssm_file = open(self.path_profile)
             except:
-                print('The %s profile will be created as one-hot profile' %self.id)
+                # print(self.id)
                 with open(self.path_fasta) as fasta_file:
                     sequence = fasta_file.read().splitlines()[1]
                     for res in sequence:
@@ -118,16 +118,30 @@ class Pssm(Database):
                 np.save('./psiblast/bin/' + self.id + '.npy', self.profile)
                 
                 if self.setype == 'test':
-                    print('The %s profile for the test-set will be modified with one-hot windows' %self.id)
+                    
                     with open(self.path_fasta) as fasta_file:
                         sequence = fasta_file.read().splitlines()[1]
 
                         for res in range(len(sequence)):
                             if np.sum(self.profile[res]) == 0:
-                                print(self.id)
-                                self.profile[res][self.residues.index(sequence[res])] = 1.0
+                                try: self.residues.index(sequence[res])
+                                except: pass
+                                else:
+                                    # print(self.id)
+                                    self.profile[res][self.residues.index(sequence[res])] = 1.0
         else:   
             self.profile = np.load(self.path_profile, allow_pickle=True)
+            if np.sum(self.profile) == 0:
+                with open(self.path_fasta) as fasta_file:
+                        sequence = fasta_file.read().splitlines()[1]
+
+                        for res in range(len(sequence)):
+                            if np.sum(self.profile[res]) == 0:
+                                try: self.residues.index(sequence[res])
+                                except: pass
+                                else:
+                                    # print(self.id)
+                                    self.profile[res][self.residues.index(sequence[res])] = 1.0
         
         return(self.profile)
     
@@ -143,11 +157,12 @@ class Dssp(Database):
     chain: str
     secondary_structure: str
 
-    def __init__(self, path_dssp, chain=False):
-        super().__init__()
+    def __init__(self, path_dssp, chain=False, dssp_raw_file=False):
+        super().__init__(self)
         self.path_dssp = path_dssp
         self.chain = chain
         self.secondary_structure = ''
+        self.dssp_raw_file = dssp_raw_file
 
     def parser(self):
         dictionary = {
@@ -156,7 +171,7 @@ class Dssp(Database):
             'C': '-', 'S': '-', 'T': '-', ' ': '-'
             }
         
-        if self.raw_file != False:
+        if self.dssp_raw_file:
             with open(self.path_dssp) as dssp_file:
                 flag = 0
                 for row in dssp_file:
@@ -191,16 +206,19 @@ class Dssp(Database):
 
 class Svm(Database):
 
-    def __init__(self, id_list, raw_file, window):
-        super().__init__()
+    def __init__(self, id_list, psiblast_raw_file, dssp_raw_file, window, setype):
+        super().__init__(self)
         
         self.id_list = id_list
-        self.raw_file = raw_file
+        self.psiblast_raw_file = psiblast_raw_file
+        self.dssp_raw_file = dssp_raw_file
         self.window = window
+        self.setype = setype
 
         self.svm_data = []
         self.padding = np.zeros((self.window//2,20))
         self.dictionary = {'H': '1', 'E': '2', '-': '3'}
+
     
     def encode(self):
         '''
@@ -214,11 +232,11 @@ class Svm(Database):
                         - if the column is zero skip
                         - else save the column in the specified format (val:column)
         '''
-        profiles = Database(datatype='psiblast', raw_file=self.raw_file)
+        profiles = Database(datatype='psiblast', setype='test', psiblast_raw_file=self.psiblast_raw_file, window=17, one_hot=True)
         profiles.build_dataset(self.id_list)
         dataset_profile = profiles.dataset
 
-        dssps = Database(datatype='dssp', raw_file=self.raw_file)
+        dssps = Database(datatype='dssp', dssp_raw_file=False)
         dssps.build_dataset(self.id_list)
         dataset_dssp = dssps.dataset
 
@@ -254,13 +272,18 @@ class Svm(Database):
 if __name__ == '__main__':
     id_input = argv[1]
 
-    prof = Database(datatype='psiblast', setype='test', raw_file=True, window=17, one_hot=True)
+    id_list = []
+    with open(id_input) as filein:
+        for id in filein:
+            id_list.append(id.rstrip())
+    
+    prof = Database(datatype='svm', setype='test', psiblast_raw_file=True, dssp_raw_file=False, window=17, one_hot=True)
+    prof_dataset = prof.build_dataset(id_list)
 
-    prof_dataset = prof.build_dataset(id_input)
-
-    # for i in prof_dataset:
-    #     for j in i:
-    #         print(j)
+    for i in prof_dataset:
+        print(i)
+        # for j in i:
+            # print(j)
 
     # svm = Database(datatype='svm', raw_file=False, window=17, one_hot=True)
     # svm_dataset = svm.build_dataset(id_input)
