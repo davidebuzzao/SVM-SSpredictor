@@ -7,17 +7,18 @@ class Svm():
 
     class_code = {'H': '1', 'E': '2', '-': '3'}
 
-    def __init__(self, id_file=False):
+    def __init__(self, id_file=False, setype='testset'):
         if id_file:
             with open(id_file) as filein:
                 self.dataset = Dict
                 self.id_list = filein.read().splitlines()
-                self.svm_dataset = []
         else:
             self.dataset = Dict
             self.id_list = []
-            self.svm_dataset = []
-            
+        
+        self.svm_dataset = []
+        self.setype = setype
+
     def encode(self, dataset=False, window=17):
         '''
         Documentation TODO
@@ -28,12 +29,14 @@ class Svm():
             raise SystemExit
         else:
             padding = np.zeros((window//2,20))
+            
             for id in self.id_list:
 
                 profile = np.vstack((padding, dataset[id]['profile'], padding))
                 dssp = ' '*8 + dataset[id]['dssp'] + ' '*8
 
                 i, j, k = 0, window//2, window
+                
                 while k <= len(dssp):
                     row = ''
                     row += self.class_code[dssp[j]]
@@ -49,8 +52,13 @@ class Svm():
                                 row += string
                                 val += 1
                         num_line += 1
-
-                    self.svm_dataset.append(row)
+                    
+                    if self.setype == 'testset':
+                        self.svm_dataset.append(row)
+                    else:
+                        if len(row) > 1:
+                            self.svm_dataset.append(row)
+                    
                     i, j, k = i+1, j+1, k+1
             
             return(self)

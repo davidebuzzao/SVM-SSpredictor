@@ -11,7 +11,6 @@ def pretty_dictionary(D):
     print()
 
 def compute_similarity(expected, predicted):
-    # with open(expected) as dssp, open(predicted) as predic:
     true = []
     pred = []
     for i,j in zip(expected, predicted):
@@ -27,9 +26,9 @@ def compute_similarity(expected, predicted):
 #####################################
 
 def print_performance(confusion_matrix):
+    TN = confusion_matrix[0][0]
     TP = confusion_matrix[1][1]
     FP = confusion_matrix[0][1]
-    TN = confusion_matrix[0][0]
     FN = confusion_matrix[1][0]
         
     ACC = (TP + TN)/(TP + FP + TN + FN)
@@ -40,13 +39,13 @@ def print_performance(confusion_matrix):
     PPV = TP / (TP + FP)
     NPV = TN / (TN + FN)
                     
-    MCC = ((TP * TN) - (FN * FP)) / (np.sqrt((TP + FN) * (TP + FP) * (TN + FN) * (TN + FP)))
-   
-    return(MCC, ACC, TPR, PPV, FPR, NPV)
+    MCC = ((TP * TN) - (FN * FP)) / (np.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN)))
+    
+    return(MCC, ACC, TPR, PPV)
 
 
 def ss_compo(dssp_file):
-    ss = ['H', 'E', '-']
+    ss = ['-', 'H', 'E']
     dictionary={'H':0, 'E':0, '-':0}
     for line in dssp_file:
         line = str(line.rstrip())
@@ -54,7 +53,6 @@ def ss_compo(dssp_file):
             dictionary[ch] += 1
 
     return (dictionary)
-    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -16,14 +16,13 @@ from sklearn.metrics import multilabel_confusion_matrix
 if __name__ == '__main__':
     filein = sys.argv[1]
     
-    ss = ['H', 'E', '-']
+    ss = ['-', 'H', 'E']
     cv_list = ['fold1', 'fold2', 'fold3', 'fold4', 'fold5']
-    scores = ['MCC', 'ACC', 'TPR', 'PPV', 'FPR', 'NPV', 'SOV']
+    scores = ['MCC', 'ACC', 'TPR', 'PPV', 'SOV']
     cv_dictionary = dict([key1, dict([key2, np.zeros(len(ss))] for key2 in scores)] for key1 in cv_list)
     q3_scores = np.zeros(len(cv_list))
 
     with open(filein) as f:
-
         for line in f:
             items = line.split()
             print(items)
@@ -49,21 +48,21 @@ if __name__ == '__main__':
             '''
             prediction = []
             expectation = []
-
+            
             for key in dictionary:
                 expectation.append(dictionary[key]['dssp'])
                 prediction.append(dictionary[key]['svm_pred'])
 
             x,y = compute_similarity(expectation, prediction)
-            multiclass_conf_mat = multilabel_confusion_matrix(x,y, labels=['H','E','-'])
+            multiclass_conf_mat = multilabel_confusion_matrix(x,y, labels=['-','H','E'])
             total = np.sum(multiclass_conf_mat[0])
 
             true_predicted = 0
 
             for index in range(3):
                 true_predicted += multiclass_conf_mat[index][1][1]
-                MCC, ACC, TPR, PPV, FPR, NPV = print_performance(multiclass_conf_mat[index])
-                score = [MCC, ACC, TPR, PPV, FPR, NPV]
+                MCC, ACC, TPR, PPV = print_performance(multiclass_conf_mat[index])
+                score = [MCC, ACC, TPR, PPV]
                 
                 scr = 0
                 while scr < len(score):
@@ -71,38 +70,53 @@ if __name__ == '__main__':
                     scr += 1
 
             q3 = true_predicted/total
-            q3_scores[cv_list.index(fold)] = q3
+            q3_scores[cv_list.index(fold)] = round(q3 * 100, 2)
 
-            sov_scores = sov(expectation, prediction, file=False)
+            sov_scores = sov(expectation, prediction)
             final_sov = np.zeros(len(ss))
             for i in range(len(ss)):
                 final_sov[i] = sov_scores[ss[i]][2]
             
             cv_dictionary[fold]['SOV'] += np.round(final_sov,2)
     
-    
-    ### Find the way to print better c !!! ###
-    d = pd.DataFrame(cv_dictionary)
-    
-    print('\n',d)
-    cv_average_ss = dict([key, np.zeros(len(ss))] for key in scores)
-    cv_average = dict([key, np.zeros(1)] for key in scores)
+        d = pd.DataFrame(cv_dictionary)
+        print('\n',d)
 
-    divisor1 = len(cv_list)
-    
-    for i in range(len(ss)):
-        scr = 0
-        while scr < len(scores):
-            for j in cv_list:
-                cv_average_ss[scores[scr]][i] += cv_dictionary[j][scores[scr]][i]
-            cv_average_ss[scores[scr]][i] #/= divisor1
-            scr += 1
-    d1 = pd.DataFrame(cv_average_ss, index=['H','E','C'])
-    print('\n', d1, '\n')
-    
-    divisor2 = len(ss)
-    for i in range(len(scores)):
-        cv_average[scores[i]] += np.sum(cv_average_ss[scores[i]])
-        cv_average[scores[i]] /= divisor2
-    d2 = pd.DataFrame(cv_average, index=['Average values'])
-    print(d2, '\n')
+        cv_average_ss = dict([key, np.zeros(len(ss))] for key in scores)
+        cv_stderr_ss = dict([key, np.zeros(len(ss))] for key in scores)
+        cv_average = dict([key, np.zeros(1)] for key in scores)
+
+        divisor1 = len(cv_list)
+
+        for i in range(len(ss)):
+            scr = 0
+            while scr < len(scores):
+                for j in cv_list:
+                    cv_average_ss[scores[scr]][i] += cv_dictionary[j][scores[scr]][i]
+
+                cv_average_ss[scores[scr]][i] /= divisor1
+                scr += 1
+        
+        for i in range(len(ss)):
+            scr = 0
+            while scr < len(scores):
+                for j in cv_list:
+                    cv_stderr_ss[scores[scr]][i] += np.power(cv_dictionary[j][scores[scr]][i] - cv_average_ss[scores[scr]][i], 2)
+
+                cv_stderr_ss[scores[scr]][i] = (np.sqrt(cv_stderr_ss[scores[scr]][i]/(len(cv_list)-1)))/np.sqrt(len(cv_list))
+                scr += 1
+
+        d1 = pd.DataFrame(cv_average_ss, index=['C','H','E'])
+        d2 = pd.DataFrame(cv_stderr_ss, index=['C','H','E'])
+        print('\n', d1, '\n')
+        print('\n', d2, '\n')
+
+        divisor2 = len(ss)
+        for i in range(len(scores)):
+            cv_average[scores[i]] += np.sum(cv_average_ss[scores[i]])
+            cv_average[scores[i]] /= divisor2
+
+        d3 = pd.DataFrame(cv_average, index=['Average values'])
+        print(d3, '\n')
+
+        print('Q3 scores:', q3_scores)

@@ -36,7 +36,7 @@ if __name__ == '__main__':
                 dict_dssp = dssp.fetch_dict()
                 dataset = Dataset(data_id, setype=setype).build(profile=dict_prof, dssp=dict_dssp).fetch_dict()
 
-                model = Svm(id_file=data_id)\
+                model = Svm(id_file=data_id, setype=setype)\
                             .load(dataset=dataset, id_file=data_id, encode=True)\
                             .save(path=data_dat, format='dat') \
                             .save(path=data_pkl, format='pkl')

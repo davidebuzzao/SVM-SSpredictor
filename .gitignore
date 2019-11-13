@@ -4,3 +4,5 @@ psiblast
 local/nextflow/.nextflow/
 fasta
 prova.py
+cv_new
+local/.DS_Store
