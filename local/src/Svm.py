@@ -1,7 +1,19 @@
 #!/usr/local/bin/python3
-import numpy as np
-import pickle
+import numpy as np, pickle
 from typing import List, Dict
+
+'''
+Svm() is a python3 class written to encode/decode data (including evolutionary information) in the form libSVM program requires or outputs.
+An object SVM is instantiated by giving in input a list of IDs. Once a dataset, in form of dictionary either pickled or not, 
+is uploaded via SVM.load() method, the dataset can be:
+-   either encoded in the right format via SVM.encode() method and can be saved into a .dat or .pkl format 
+    by using the SVM.save() method and y providing a path where save the file. 
+-   or with the use of SVM.decoding() method, by providing an outcome file of libSVM's predictions, the 1D secondary structure
+    sequence is saved in dictionary['svm_pred']
+
+Dataset can be fetched by SVM.fetch_dictionary() --> Dict
+Encoded_data can be fetched by SVM.fetch_encoded_data() --> List
+'''
 
 class Svm():
 
@@ -21,7 +33,12 @@ class Svm():
 
     def encode(self, dataset=False, window=17):
         '''
-        Documentation TODO
+        A check on dataset in input, if not loaded as pikle, is firstly done. 
+        The encoding required by libSVM program is in the format:
+                    [1,2,3] 1:0. 2:0. ... Lx20:0.
+        where 1,2,3 are the secondary structure states derived by the process of 8- to 3-state reduction; 
+        the next numbers come as consequence of the data transformation from a profile Lx20 window (matrix) where L is set
+        by default as 17, to a vector of Lx20 dimensions.
         '''
         try: dataset != False
         except: 
@@ -63,7 +80,7 @@ class Svm():
             
             return(self)
 
-    def fetch_prediction(self, prediction_file):
+    def deconding(self, prediction_file):
         try: prediction_file != False
         except: 
             print('Method usage: obj.fetch_prediction(pred_file=X)')
@@ -122,8 +139,9 @@ class Svm():
                 if encode: self.encode(dataset=self.dataset)
         return(self)
 
-    def fetch_encoded_data(self) -> Dict:
-        return(self.svm_dataset)
     
     def fetch_dictionary(self):
         return(self.dataset)
+
+    def fetch_encoded_data(self) -> Dict:
+        return(self.svm_dataset)

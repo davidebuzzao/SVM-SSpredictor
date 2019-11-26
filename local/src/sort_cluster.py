@@ -31,7 +31,3 @@ if __name__ == '__main__':
             lid = line.rstrip().split()
             slid = sort_cluster(lid, d)
             print(len(slid), ' '.join([i[1] + ":" + str(i[0]) for i in slid]))
-
-    '''
-    ALL THE DICKS FOR ME
-    '''

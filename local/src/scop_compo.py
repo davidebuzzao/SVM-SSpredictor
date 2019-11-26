@@ -63,10 +63,7 @@ def scop_piechart(dictionary, tot, outdir=False, RGB='Greys_r'):
                                     for i in range(len(sizes))])
         
         ax1.pie(sizes,
-                #explode=(0.05,0.05,0.05,0.05,0.05,0.05,0.05),
-                #labels=labels,
                 labeldistance=1.2,
-                #autopct='%1.1f%%',
                 startangle=70,
                 wedgeprops={"edgecolor":"k", 'linewidth': 1, 'linestyle': 'solid', 'antialiased': True})
         
@@ -93,7 +90,7 @@ def scop_piechart(dictionary, tot, outdir=False, RGB='Greys_r'):
 
 if __name__ == '__main__':
     try:
-        dom_file = sys.argv[1] ## jpred4.list.txt
+        dom_file = sys.argv[1] ## id dataset .txt
         legend_file = sys.argv[2] ## legend.txt (retrieved by cleaning dir.des.scope.2.06-stable.txt)
         scop_class_file = sys.argv[3] ## dir.cla.scope.2.06-stable.txt
     except:

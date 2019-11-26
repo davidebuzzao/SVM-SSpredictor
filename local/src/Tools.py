@@ -6,10 +6,10 @@ from sys import argv
 class Dataset():
     '''
     The class Dataset is intended to be updated as soon as some new formatted files 
-    will be introduced in my bioinformatics pipelines. For the time being, sequence profiles
-    coming from psiblast runs and dssp outputs are parsed both starting from raw and pre-pruned 
-    files, then datasets are built by stacking information of single objects (by the use of other classes)
-    in order to deal with the whole DATABASE when training models in a Machine Learning framemwork.
+    will be introduced in my bioinformatics pipelines. For the time being, single-line fasta sequences, sequence profiles
+    coming from psiblast runs and dssp outputs are parsed both starting from raw and pre-pruned files, then datasets 
+    are built by stacking information of single objects (by the use of other classes) in order to deal with the whole 
+    dataset when training models.
     '''
     info_stored: List
     dataset: Dict
@@ -252,13 +252,13 @@ if __name__ == '__main__':
     id_list = sys.argv[1]
     setype = sys.argv[2]
     prof = Pssm(id_list, setype=setype, raw_file=True).parse().save()
-    # dict_prof = prof.fetch_dict()
+    dict_prof = prof.fetch_dict()
 
-    #dssp = Dssp(id_list, setype=setype, raw_file=True, pdb=True).parse().save()
-    #ls dict_dssp = dssp.fetch_dict()
-    # data = Dataset(id_list, setype='testset').build(profile=dict_prof, dssp=dict_dssp)
-    # dataset = data.fetch_dict()
-    # for key in dataset:
-    #     print(key, '\n', dataset[key]['profile'], '\n')#, dataset[key]['dssp'])
+    dssp = Dssp(id_list, setype=setype, raw_file=True, pdb=True).parse().save()
+    dict_dssp = dssp.fetch_dict()
+    data = Dataset(id_list, setype='testset').build(profile=dict_prof, dssp=dict_dssp)
+    dataset = data.fetch_dict()
+    for key in dataset:
+        print(key, '\n', dataset[key]['profile'], '\n')#, dataset[key]['dssp'])
 
-    # data.save(path='./dataset/cv/fold5/', name='cv4.pkl')
+    data.save(path='./dataset/cv/fold5/', name='cv4.pkl')

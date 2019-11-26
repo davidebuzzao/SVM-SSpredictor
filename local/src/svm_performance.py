@@ -47,8 +47,7 @@ if __name__ == '__main__':
                 ### Build the dataset from dataset.pkl ###
                 model = Svm() \
                             .load(dataset=data_pkl, id_file=data_id, encode=True, pkl=True)\
-                            .fetch_prediction(prediction_file=pred_file)\
-                            #.save(path=data_dat, format='dat')
+                            .decoding(prediction_file=pred_file)
 
                 dictionary = model.fetch_dictionary()
 

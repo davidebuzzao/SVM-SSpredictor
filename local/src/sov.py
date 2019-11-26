@@ -1,18 +1,21 @@
 #!/usr/local/bin/python3
 
-'''
-Residue-level indexes computed from confusion matrices are not sufficient to properly score a SS prediction method.
-Assessing the biological significance of predictions requires comparing predicted and observed segments of residues in the same conformation
-• α-Helix segments shorter than 4 residues are meaningless in biology;
-• Strands usually involves 2 or more residues (except for isolated β-bridges)
-Specific segment-level indexes are then required to analyse these aspects and assess the biological significance of SS predictions.
-'''
-
 import pandas as pd
 import numpy as np
 import argparse
 
+'''
+Residue-level indexes computed from confusion matrices are not sufficient to properly score a SS prediction method.
+Assessing the biological significance of predictions requires comparing predicted and observed segments of residues in the same conformation
+• α-Helix segments shorter than 3-4 residues are meaningless in biology;
+• Strands usually involves 2 or more residues (except for isolated β-bridges)
+Specific segment-level indexes are then required to analyse these aspects and assess the biological significance of SS predictions.
+'''
+
 def sov(expected, predicted):
+    '''
+    This function is intended to give back a dictionary of SOV scores, one per secondary structure state. 
+    '''
     secondary_structure = ['-', 'H', 'E']
     ss_dictionary = dict([key, np.zeros(3)] for key in secondary_structure)
     
@@ -39,9 +42,8 @@ def sov(expected, predicted):
 
 def sov_parser(sequence, ss):
     '''
-    This function is intended to compute the Segment OVerlap index.
-    A segment-level index which evaluated the percent average overlap 
-    between predicted and observed segments in the three SS conformations.
+    This function is intended to extract from sequence in input every segment of 
+    continous characters of specified secondary structure state
     '''
     sequence = sequence.rstrip()
     fragments = []
@@ -51,28 +53,34 @@ def sov_parser(sequence, ss):
         while sequence[val] == ss and val < len(sequence) - 1:
             tmp_list.append(val)
             val += 1
-        fragments.append(set(tmp_list))
+        
+        if len(tmp_list) > 1:
+            fragments.append(set(tmp_list))
         val += 1
 
     return(fragments)
 
 
 def sov_scorer(dssp_fragments, pred_fragments):
+    '''
+    This function is intended to compute the Segment OVerlap index (SOV).
+    The normalizer factor is computed as introduced by Zemla et al., 1999
+    '''
     summatory = []
     normalizer = 0
    
-    for s in dssp_fragments:
+    for obs in dssp_fragments:
         flag = 0
-        for t in pred_fragments:
-            if s & t:
+        for pred in pred_fragments:
+            if obs & pred:
                 flag = 1
-                normalizer += len(s)
-                minov = len(s&t)
-                maxov = len(s|t)
-                delta = min([minov, maxov-minov, len(s)/2, len(t)/2])
-                summatory.append(((minov + delta)/maxov * len(s)))
+                normalizer += len(obs)
+                minov = len(obs & pred)
+                maxov = len(obs | pred)
+                delta = min([minov, maxov-minov, len(obs)/2, len(pred)/2])
+                summatory.append(((minov + delta)/maxov * len(obs)))
         if flag == 0:
-            normalizer += len(s)
+            normalizer += len(obs)
 
     if normalizer:
         sov = sum(summatory) * 100 * (1/normalizer)

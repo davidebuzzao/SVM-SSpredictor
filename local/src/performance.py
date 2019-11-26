@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3
-# import sys
+
 from sklearn.metrics import multilabel_confusion_matrix
 import pandas as pd
 import numpy as np
@@ -44,16 +44,6 @@ def print_performance(confusion_matrix):
     return(MCC, ACC, TPR, PPV)
 
 
-def ss_compo(dssp_file):
-    ss = ['-', 'H', 'E']
-    dictionary={'H':0, 'E':0, '-':0}
-    for line in dssp_file:
-        line = str(line.rstrip())
-        for ch in line:
-            dictionary[ch] += 1
-
-    return (dictionary)
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('DSSP', \
@@ -61,9 +51,6 @@ if __name__ == '__main__':
     parser.add_argument('SSpredictions', \
         help='This is the file with concatenating BlindSet secondary structure predicted via GOR')
     args = parser.parse_args()    
-    
-    #ss_composition = ss_compo(dssp)
-    #pretty_dictionary(ss_composition)
     
     x,y = compute_similarity(args.DSSP, args.SSpredictions)
     multiclass_conf_mat = multilabel_confusion_matrix(x,y, labels=['H','E','-'])
