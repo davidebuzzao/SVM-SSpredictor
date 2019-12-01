@@ -80,7 +80,7 @@ class Svm():
             
             return(self)
 
-    def deconding(self, prediction_file):
+    def decoding(self, prediction_file):
         try: prediction_file != False
         except: 
             print('Method usage: obj.fetch_prediction(pred_file=X)')

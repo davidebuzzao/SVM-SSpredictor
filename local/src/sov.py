@@ -54,6 +54,9 @@ def sov_parser(sequence, ss):
             tmp_list.append(val)
             val += 1
         
+        if tmp_list and val == len(sequence)-1:     
+            tmp_list.append(val)
+            
         if len(tmp_list) > 1:
             fragments.append(set(tmp_list))
         val += 1
