@@ -57,7 +57,7 @@ def sov_parser(sequence, ss):
         if tmp_list and val == len(sequence)-1:     
             tmp_list.append(val)
             
-        if len(tmp_list) > 1:
+        if len(tmp_list) > 0:
             fragments.append(set(tmp_list))
         val += 1
 
@@ -80,7 +80,7 @@ def sov_scorer(dssp_fragments, pred_fragments):
                 normalizer += len(obs)
                 minov = len(obs & pred)
                 maxov = len(obs | pred)
-                delta = min([minov, maxov-minov, len(obs)/2, len(pred)/2])
+                delta = min([minov, maxov-minov, len(obs)//2, len(pred)//2])
                 summatory.append(((minov + delta)/maxov * len(obs)))
         if flag == 0:
             normalizer += len(obs)
